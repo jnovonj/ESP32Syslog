@@ -1,0 +1,47 @@
+#######################################
+# Class (KEYWORD1)
+#######################################
+ESP32Syslog	KEYWORD1
+SyslogSeverity	KEYWORD1
+
+#######################################
+# Methods (KEYWORD2)
+#######################################
+begin	KEYWORD2
+send	KEYWORD2
+log	KEYWORD2
+logX	KEYWORD2
+logA	KEYWORD2
+logC	KEYWORD2
+logE	KEYWORD2
+logW	KEYWORD2
+logN	KEYWORD2
+logI	KEYWORD2
+logD	KEYWORD2
+processBuffer	KEYWORD2
+setSerial	KEYWORD2
+
+#######################################
+# Macros (Also KEYWORD2)
+#######################################
+SYSLOG_X	KEYWORD2
+SYSLOG_A	KEYWORD2
+SYSLOG_C	KEYWORD2
+SYSLOG_E	KEYWORD2
+SYSLOG_W	KEYWORD2
+SYSLOG_N	KEYWORD2
+SYSLOG_I	KEYWORD2
+SYSLOG_D	KEYWORD2
+
+#######################################
+# Constants & Object (LITERAL1)
+#######################################
+syslog	LITERAL1
+SYSLOG_EMERG	LITERAL1
+SYSLOG_ALERT	LITERAL1
+SYSLOG_CRIT	LITERAL1
+SYSLOG_ERR	LITERAL1
+SYSLOG_WARN	LITERAL1
+SYSLOG_NOTICE	LITERAL1
+SYSLOG_INFO	LITERAL1
+SYSLOG_DEBUG	LITERAL1
