@@ -3,7 +3,7 @@
 **A robust, industrial-grade Syslog library for ESP32 (S3, C3, and classic) with full RFC 5424 support and offline buffering.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/jnovonj/ESP32Syslog)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/jnovonj/ESP32Syslog)
 [![Framework: Arduino](https://img.shields.io/badge/Framework-Arduino-blue.svg)](https://www.arduino.cc/)
 
 `ESP32Syslog` is a lightweight yet powerful logging library that allows your IoT devices to communicate with standard Syslog servers (like rsyslog, Graylog, or Logstash). Unlike simpler libraries, it implements the modern **RFC 5424** standard, allowing for structured data and precise telemetry.
