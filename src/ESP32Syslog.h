@@ -7,9 +7,25 @@
 #include <time.h>
 #include <Stream.h>
 
+#define ESP32SYSLOG_VERSION "1.1.0"
+
+// To save program memory, you can specify which protocols to support.
+// Add one or both of the following to your platformio.ini's build_flags:
+// -D SYSLOG_ENABLE_RFC3164
+// -D SYSLOG_ENABLE_RFC5424
+// If neither is defined, both are enabled by default for compatibility.
+#if !defined(SYSLOG_ENABLE_RFC3164) && !defined(SYSLOG_ENABLE_RFC5424)
+  #define SYSLOG_ENABLE_RFC3164
+  #define SYSLOG_ENABLE_RFC5424
+#endif
+
+#if !defined(SYSLOG_ENABLE_RFC3164) && !defined(SYSLOG_ENABLE_RFC5424)
+#error "Syslog error: At least one protocol (SYSLOG_ENABLE_RFC3164 or SYSLOG_ENABLE_RFC5424) must be defined."
+#endif
+
 // Limit configuration
 #define SYSLOG_BUFFER_SIZE 64      // Circular buffer size (number of messages)
-#define SYSLOG_MSG_MAX_LEN 150     // Maximum length of a Syslog message
+#define SYSLOG_MSG_MAX_LEN 480     // Maximum length of a Syslog message (min recommended for RFC5424)
 #define SYSLOG_FACILITY 16         // local use 0 (local0)
 
 /**
@@ -30,9 +46,22 @@ enum SyslogSeverity {
  * Syslog Protocol Versions
  */
 enum SyslogProtocol {
-    SYSLOG_PROTO_RFC3164, // Legacy BSD format
-    SYSLOG_PROTO_RFC5424  // Modern IETF format
+    SYSLOG_PROTO_RFC3164_VALUE = 0,
+    SYSLOG_PROTO_RFC5424_VALUE = 1
 };
+
+#if defined(SYSLOG_ENABLE_RFC3164)
+  #define SYSLOG_PROTO_RFC3164 ((SyslogProtocol)SYSLOG_PROTO_RFC3164_VALUE)
+#endif
+#if defined(SYSLOG_ENABLE_RFC5424)
+  #define SYSLOG_PROTO_RFC5424 ((SyslogProtocol)SYSLOG_PROTO_RFC5424_VALUE)
+#endif
+
+#if defined(SYSLOG_ENABLE_RFC3164)
+  #define _SYSLOG_DEFAULT_PROTOCOL SYSLOG_PROTO_RFC3164
+#elif defined(SYSLOG_ENABLE_RFC5424)
+  #define _SYSLOG_DEFAULT_PROTOCOL SYSLOG_PROTO_RFC5424
+#endif
 
 /**
  * Structure for internal circular buffer (Offline Mode)
@@ -47,7 +76,7 @@ public:
     ESP32Syslog();
 
     // Initializes the library
-    void begin(IPAddress serverIp, uint16_t port, const char* hostname, const char* appName, SyslogProtocol protocol = SYSLOG_PROTO_RFC3164);
+    void begin(IPAddress serverIp, uint16_t port, const char* hostname, const char* appName, SyslogProtocol protocol = _SYSLOG_DEFAULT_PROTOCOL);
 
     // Manual message sending
     void send(SyslogSeverity severity, const char* message);

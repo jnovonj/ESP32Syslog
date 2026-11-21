@@ -1,10 +1,10 @@
-#include "ESP32Syslog.h"
 #include <WiFi.h>
+#include <ESP32Syslog.h>
 
 /**
  * Constructor: Initializes pointers and states
  */
-ESP32Syslog::ESP32Syslog() : _protocol(SYSLOG_PROTO_RFC3164), _isInitialized(false), _serial_port(nullptr), _head(0), _tail(0), _count(0) {}
+ESP32Syslog::ESP32Syslog() : _protocol(_SYSLOG_DEFAULT_PROTOCOL), _isInitialized(false), _serial_port(nullptr), _head(0), _tail(0), _count(0) {}
 
 /**
  * Initial configuration
@@ -70,14 +70,19 @@ void ESP32Syslog::vlog(SyslogSeverity severity, const char* tag, const char* for
     size_t remaining_space;
 
     // 1. Prepare the prefix based on the protocol
-    // RFC 3164 needs a ":" after the tag to prevent parsing errors with later ":" in the message.
-    // RFC 5424 works better with brackets as the tag is extracted to MSGID anyway.
     int prefix_len;
+#if defined(SYSLOG_ENABLE_RFC3164) && defined(SYSLOG_ENABLE_RFC5424)
+    // RFC 3164 needs a ":" after the tag, RFC 5424 works better with brackets.
     if (_protocol == SYSLOG_PROTO_RFC3164) {
         prefix_len = snprintf(final_msg, sizeof(final_msg), "%s: ", tag);
     } else {
         prefix_len = snprintf(final_msg, sizeof(final_msg), "[%s] ", tag);
     }
+#elif defined(SYSLOG_ENABLE_RFC3164)
+    prefix_len = snprintf(final_msg, sizeof(final_msg), "%s: ", tag);
+#elif defined(SYSLOG_ENABLE_RFC5424)
+    prefix_len = snprintf(final_msg, sizeof(final_msg), "[%s] ", tag);
+#endif
 
     // Handle potential snprintf errors or truncation
     if (prefix_len < 0) {
@@ -93,9 +98,12 @@ void ESP32Syslog::vlog(SyslogSeverity severity, const char* tag, const char* for
 
     // 3. SIMULTANEOUS SEND TO SERIAL
     if (_serial_port) {
+#if defined(SYSLOG_ENABLE_RFC5424)
         if (_protocol == SYSLOG_PROTO_RFC5424 && strcmp(_structuredData, "-") != 0) {
             _serial_port->printf("[%s] %s %s\n", tag, _structuredData, user_msg_ptr);
-        } else {
+        } else
+#endif
+        {
             // Keep brackets for serial output as it's more readable for humans
             _serial_port->printf("[%s] %s\n", tag, user_msg_ptr);
         }
@@ -120,6 +128,7 @@ bool ESP32Syslog::transmitUDP(uint8_t severity, const char* msg) {
     int pri = (SYSLOG_FACILITY << 3) | (uint8_t)severity;
 
     if (_udp.beginPacket(_serverIp, _port)) {
+#if defined(SYSLOG_ENABLE_RFC5424)
         if (_protocol == SYSLOG_PROTO_RFC5424) {
             // RFC 5424 Format: <PRI>VERSION TIMESTAMP HOSTNAME APPNAME PROCID MSGID STRUCTURED-DATA MSG
             // Note: For this to work, time must be synchronized via NTP.
@@ -148,7 +157,13 @@ bool ESP32Syslog::transmitUDP(uint8_t severity, const char* msg) {
 
             // Send RFC 5424 with ProcID, MSGID and STRUCTURED-DATA
             _udp.printf("<%d>1 %s %s %s %s %s %s %s", pri, time_buf, _hostname, _appName, _procId, msgId, _structuredData, msgBody);
-        } else if (_protocol == SYSLOG_PROTO_RFC3164) {
+        }
+#endif
+#if defined(SYSLOG_ENABLE_RFC3164)
+#if defined(SYSLOG_ENABLE_RFC5424)
+        else
+#endif
+        if (_protocol == SYSLOG_PROTO_RFC3164) {
             // RFC 3164 Format: <PRI>TIMESTAMP HOSTNAME MSG
             
             time_t now;
@@ -157,8 +172,9 @@ bool ESP32Syslog::transmitUDP(uint8_t severity, const char* msg) {
             // Format timestamp "Mmm dd hh:mm:ss"
             strftime(time_buf, sizeof(time_buf), "%b %d %H:%M:%S", localtime(&now));
 
-            _udp.printf("<%d>%s %s %s", pri, time_buf, _hostname, msg);
+            _udp.printf("<%d>%s %s %s %s", pri, time_buf, _hostname, msg);
         }
+#endif
 
         bool success = _udp.endPacket();
         return success;

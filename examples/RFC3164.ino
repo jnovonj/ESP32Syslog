@@ -39,6 +39,7 @@ void setup() {
   Serial.printf("IP Address: %s\n", WiFi.localIP().toString().c_str());
 
   // --- Syslog Initialization ---
+  // Note: SYSLOG_PROTO_RFC3164 is defined only if SYSLOG_ENABLE_RFC3164 is enabled (default).
   // Initialize with: Server IP, Port, Device Name, App Name, Protocol
   syslog.begin(syslogServer, SYSLOG_PORT, DEVICE_HOSTNAME, APP_NAME, SYSLOG_PROTO_RFC3164);
   
