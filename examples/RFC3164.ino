@@ -26,7 +26,7 @@ void setup() {
   
   // A simple pause to give the serial monitor time to connect.
   delay(1000);
-  Serial.println("\n--- ESP32Syslog Basic Example ---");
+  Serial.println("\n--- ESP32Syslog RFC 3164 Example ---");
 
   // --- WiFi Connection ---
   Serial.printf("Connecting to %s ", WIFI_SSID);
@@ -49,8 +49,8 @@ void setup() {
   syslog.setSerial(&Serial);
 
   // --- Sending Logs ---
-  // It's good practice to send an initial log message.
   SYSLOG_I("System", "Initialization complete. IP: %s", WiFi.localIP().toString().c_str());
+  SYSLOG_I("System", "Protocol: RFC 3164");
 }
 
 void loop() {

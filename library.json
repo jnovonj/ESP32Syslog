@@ -1,6 +1,6 @@
 {
   "name": "ESP32Syslog",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A robust, industrial-grade Syslog library for ESP32 (S3, C3, and classic) with full RFC 5424 support and offline buffering.",
   "keywords": [
     "syslog",

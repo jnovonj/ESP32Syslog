@@ -15,8 +15,8 @@ IPAddress syslogServer(192, 168, 1, 100);
 const int SYSLOG_PORT = 514;
 
 // Device and application names for the logs
-const char* DEVICE_HOSTNAME = "ESP32-S3";
-const char* APP_NAME = "ModernApp";
+const char* DEVICE_HOSTNAME = "ESP32Syslog";
+const char* APP_NAME = "MyApp";
 
 // NTP Server configuration for accurate timestamps (Required for RFC 5424)
 const char* NTP_SERVER = "es.pool.ntp.org";
@@ -67,7 +67,9 @@ void setup() {
   // Format: [SD-ID param="value"...]
   syslog.setStructuredData("[exampleSDID@32473 iut=\"3\" eventSource=\"Application\" eventID=\"1011\"]");
 
-  SYSLOG_I("System", "Initialization complete. Protocol: RFC 5424");
+  // --- Sending Logs ---
+  SYSLOG_I("System", "Initialization complete. IP: %s", WiFi.localIP().toString().c_str());
+  SYSLOG_I("System", "Protocol: RFC 5424");
 }
 
 void loop() {
