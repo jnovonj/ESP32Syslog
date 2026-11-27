@@ -7,7 +7,7 @@
 #include <time.h>
 #include <Stream.h>
 
-#define ESP32SYSLOG_VERSION "1.2.0"
+#define ESP32SYSLOG_VERSION "1.2.1"
 
 // To save program memory, you can specify which protocols to support.
 // Add one or both of the following to your platformio.ini's build_flags:

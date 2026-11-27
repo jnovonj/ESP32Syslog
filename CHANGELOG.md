@@ -13,3 +13,5 @@ All notable changes to this project will be documented in this file.
 ### Improved
 - **Maintainability:** Improved internal documentation and structure of the `transmitUDP` method for better scalability when adding new protocols.
 - **Documentation:** Added comprehensive API reference in `docs/API.md` for better developer experience.
+
+
