@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2025-05-22
+## [1.2.2] - 2026-11-27
 
 ### Fixed
 - **Critical Crash (LoadProhibited):** Fixed an out-of-bounds memory access in `transmitUDP` caused by a parameter mismatch in the `printf` formatting string for RFC 3164 protocol.
@@ -13,5 +13,3 @@ All notable changes to this project will be documented in this file.
 ### Improved
 - **Maintainability:** Improved internal documentation and structure of the `transmitUDP` method for better scalability when adding new protocols.
 - **Documentation:** Added comprehensive API reference in `docs/API.md` for better developer experience.
-
-

@@ -8,7 +8,7 @@
 
 `ESP32Syslog` is a lightweight yet powerful logging library that allows your IoT devices to communicate with standard Syslog servers. Unlike simpler libraries, it implements the modern **RFC 5424** standard.
 
-## 🚀 Key Changes in v1.2.1
+## 🚀 Key Changes in v1.2.2
 - **System Stability:** Refactored internal protocol dispatcher into helper methods to resolve memory access issues (`LoadProhibited`).
 - **Refactoring:** Improved architectural cleanliness by separating protocol logic.
 - **Documentation:** Added comprehensive API documentation in `docs/API.md` and updated usage examples.
@@ -34,19 +34,3 @@ All examples are now structured homogeneously for both protocols. Follow the bas
 1. `begin()` initialization.
 2. `setSerial(&Serial)` for local debugging.
 3. Call `processBuffer()` in your `loop()`.
-
-
-
-
-
-
-
-
-
-
-## 🚀 Key Changes in v1.2.0
-- **System Stability:** Fixed critical memory access issues (`LoadProhibited`) by refactoring the internal protocol dispatcher.
-- **Architecture:** The library now uses a clean, protocol-specific helper architecture, improving reliability and making it easier to add new standards.
-- **Robustness:** Added defensive checks for uninitialized pointers and undefined protocol configurations.
-
----
