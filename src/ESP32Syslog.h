@@ -7,7 +7,7 @@
 #include <time.h>
 #include <Stream.h>
 
-#define ESP32SYSLOG_VERSION "1.1.0"
+#define ESP32SYSLOG_VERSION "1.2.0"
 
 // To save program memory, you can specify which protocols to support.
 // Add one or both of the following to your platformio.ini's build_flags:
@@ -121,6 +121,15 @@ private:
 
     void pushToBuffer(uint8_t sev, const char* msg);
     bool transmitUDP(uint8_t severity, const char* msg);
+
+    // Protocol-specific helpers
+#if defined(SYSLOG_ENABLE_RFC3164)
+    bool transmitRFC3164(uint8_t severity, const char* msg, int pri);
+#endif
+#if defined(SYSLOG_ENABLE_RFC5424)
+    bool transmitRFC5424(uint8_t severity, const char* msg, int pri);
+#endif
+    bool transmitUnknown(uint8_t severity, const char* msg, int pri);
 };
 
 // --- REDIRECTION MACROS (PLAN B) ---

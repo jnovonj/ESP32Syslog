@@ -122,64 +122,76 @@ void ESP32Syslog::send(SyslogSeverity severity, const char* message) {
 }
 
 /**
- * UDP Transmission (RFC 3164)
+ * UDP Transmission
+ * Dispatches to protocol-specific helpers.
  */
 bool ESP32Syslog::transmitUDP(uint8_t severity, const char* msg) {
     int pri = (SYSLOG_FACILITY << 3) | (uint8_t)severity;
 
-    if (_udp.beginPacket(_serverIp, _port)) {
+    if (!_udp.beginPacket(_serverIp, _port)) return false;
+
+    bool result = false;
+    switch (_protocol) {
 #if defined(SYSLOG_ENABLE_RFC5424)
-        if (_protocol == SYSLOG_PROTO_RFC5424) {
-            // RFC 5424 Format: <PRI>VERSION TIMESTAMP HOSTNAME APPNAME PROCID MSGID STRUCTURED-DATA MSG
-            // Note: For this to work, time must be synchronized via NTP.
-            time_t now;
-            time(&now);
-            char time_buf[30];
-            // Format timestamp in ISO 8601 format with UTC timezone
-            strftime(time_buf, sizeof(time_buf), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
-
-            // Extract TAG from "[Tag] Message" to use as MSGID
-            char msgId[32];
-            strcpy(msgId, "-");
-            const char* msgBody = msg;
-
-            if (msg[0] == '[') {
-                const char* endBracket = strchr(msg, ']');
-                if (endBracket != nullptr && (endBracket - msg) < (int)sizeof(msgId)) {
-                    size_t len = endBracket - msg - 1;
-                    if (len > 0) {
-                        strncpy(msgId, msg + 1, len);
-                        msgId[len] = '\0';
-                    }
-                    msgBody = (*(endBracket + 1) == ' ') ? endBracket + 2 : endBracket + 1;
-                }
-            }
-
-            // Send RFC 5424 with ProcID, MSGID and STRUCTURED-DATA
-            _udp.printf("<%d>1 %s %s %s %s %s %s %s", pri, time_buf, _hostname, _appName, _procId, msgId, _structuredData, msgBody);
-        }
+        case SYSLOG_PROTO_RFC5424_VALUE:
+            result = transmitRFC5424(severity, msg, pri);
+            break;
 #endif
 #if defined(SYSLOG_ENABLE_RFC3164)
-#if defined(SYSLOG_ENABLE_RFC5424)
-        else
+        case SYSLOG_PROTO_RFC3164_VALUE:
+            result = transmitRFC3164(severity, msg, pri);
+            break;
 #endif
-        if (_protocol == SYSLOG_PROTO_RFC3164) {
-            // RFC 3164 Format: <PRI>TIMESTAMP HOSTNAME MSG
-            
-            time_t now;
-            time(&now);
-            char time_buf[17];
-            // Format timestamp "Mmm dd hh:mm:ss"
-            strftime(time_buf, sizeof(time_buf), "%b %d %H:%M:%S", localtime(&now));
-
-            _udp.printf("<%d>%s %s %s %s", pri, time_buf, _hostname, msg);
-        }
-#endif
-
-        bool success = _udp.endPacket();
-        return success;
+        default:
+            result = transmitUnknown(severity, msg, pri);
+            break;
     }
-    return false;
+
+    return result && _udp.endPacket();
+}
+
+#if defined(SYSLOG_ENABLE_RFC5424)
+bool ESP32Syslog::transmitRFC5424(uint8_t severity, const char* msg, int pri) {
+    time_t now;
+    time(&now);
+    char time_buf[30];
+    strftime(time_buf, sizeof(time_buf), "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
+
+    char msgId[32] = "-";
+    const char* msgBody = msg;
+    if (msg[0] == '[') {
+        const char* endBracket = strchr(msg, ']');
+        if (endBracket != nullptr && (endBracket - msg) < (int)sizeof(msgId)) {
+            size_t len = endBracket - msg - 1;
+            if (len > 0) {
+                strncpy(msgId, msg + 1, len);
+                msgId[len] = '\0';
+            }
+            msgBody = (*(endBracket + 1) == ' ') ? endBracket + 2 : endBracket + 1;
+        }
+    }
+
+    _udp.printf("<%d>1 %s %s %s %s %s %s %s",
+        pri, time_buf, _hostname, _appName, _procId, msgId, _structuredData, msgBody);
+    return true;
+}
+#endif
+
+#if defined(SYSLOG_ENABLE_RFC3164)
+bool ESP32Syslog::transmitRFC3164(uint8_t severity, const char* msg, int pri) {
+    time_t now;
+    time(&now);
+    char time_buf[17];
+    strftime(time_buf, sizeof(time_buf), "%b %d %H:%M:%S", localtime(&now));
+
+    _udp.printf("<%d>%s %s %s", pri, time_buf, _hostname, msg);
+    return true;
+}
+#endif
+
+bool ESP32Syslog::transmitUnknown(uint8_t severity, const char* msg, int pri) {
+    _udp.printf("<%d> Unknown protocol: %s", pri, msg);
+    return true;
 }
 
 /**
@@ -189,9 +201,9 @@ void ESP32Syslog::pushToBuffer(uint8_t sev, const char* msg) {
     _buffer[_head].severity = sev;
     strncpy(_buffer[_head].message, msg, SYSLOG_MSG_MAX_LEN - 1);
     _buffer[_head].message[SYSLOG_MSG_MAX_LEN - 1] = '\0';
-    
+
     _head = (_head + 1) % SYSLOG_BUFFER_SIZE;
-    
+
     if (_count < SYSLOG_BUFFER_SIZE) {
         _count++;
     } else {
@@ -209,21 +221,21 @@ void ESP32Syslog::processBuffer() {
     if (WiFi.status() != WL_CONNECTED) return;
 
     // Flush circular buffer
-    while (_count > 0 && WiFi.status() == WL_CONNECTED) {        
+    while (_count > 0 && WiFi.status() == WL_CONNECTED) {
         if (transmitUDP(_buffer[_tail].severity, _buffer[_tail].message)) {
             _tail = (_tail + 1) % SYSLOG_BUFFER_SIZE;
             _count--;
-            
+
             // Yield CPU time to background tasks (like the network stack).
-            yield(); 
+            yield();
             // This short delay is crucial. It gives the lwIP network stack time to process
             // and send the previous UDP packet, preventing buffer overflows and packet loss
             // when sending logs in quick succession.
-            delay(2); 
+            delay(2);
         } else {
             // If transmitUDP returns false (e.g., network buffer full),
             // stop and try again in the next loop iteration.
-            break; 
+            break;
         }
     }
 }

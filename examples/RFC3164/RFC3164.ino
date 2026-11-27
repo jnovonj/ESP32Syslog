@@ -28,7 +28,7 @@ void setup() {
   delay(1000);
   Serial.println("\n--- ESP32Syslog RFC 3164 Example ---");
 
-  // --- WiFi Connection ---
+  // 1. Connect to WiFi
   Serial.printf("Connecting to %s ", WIFI_SSID);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   while (WiFi.status() != WL_CONNECTED) {
@@ -41,8 +41,9 @@ void setup() {
   // --- Syslog Initialization ---
   // Note: SYSLOG_PROTO_RFC3164 is defined only if SYSLOG_ENABLE_RFC3164 is enabled (default).
   // Initialize with: Server IP, Port, Device Name, App Name, Protocol
+
   syslog.begin(syslogServer, SYSLOG_PORT, DEVICE_HOSTNAME, APP_NAME, SYSLOG_PROTO_RFC3164);
-  
+
   // Optional: Enable log output to the serial monitor for debugging
   // We pass a pointer (&Serial) instead of true/false. 
   // This allows selecting any Stream (like Serial1, Serial2, or SD files) or NULL to disable.
